@@ -2,6 +2,7 @@ export interface Ride {
   id: string;
   title: string;
   bike: string;
+  googleMapUrl?: string;
   coordinates: [number, number]; // [longitude, latitude]
   stats: {
     distance: string;
@@ -23,6 +24,7 @@ export const rides: Ride[] = [
     id: "goa-first-ride",
     title: "GOA - First Ride",
     bike: "Super Meteor 650",
+    googleMapUrl: "https://maps.app.goo.gl/iJTr7FBrpjtv5y5i9",
     coordinates: [15.524429083057536, 73.7679265954954], // GOA
     stats: { distance: "840 km", duration: "18h 17m", type: "Sunny" },
     links: {
@@ -39,6 +41,7 @@ export const rides: Ride[] = [
     id: "velas-coastal-ride",
     title: "Velas Coastal Ride",
     bike: "Super Meteor 650",
+    googleMapUrl: "https://maps.app.goo.gl/1aqJimzyJq3Q3kz57",
     coordinates: [18.201602430477518, 72.97437112040053], // Velas
     stats: { distance: "370 km", duration: "6h 27m", type: "Sunny" },
     links: {
@@ -71,6 +74,7 @@ export const rides: Ride[] = [
     id: "tamhini-ride",
     title: "Tamhini Ride",
     bike: "Super Meteor 650",
+    googleMapUrl: "https://maps.app.goo.gl/cTJreM9dohbUGZn98",
     coordinates: [18.42465897622231, 73.36089482534888], // Tamhini
     stats: { distance: "185 km", duration: "3h 14m", type: "Sunny / Cloudy" },
     links: {
@@ -85,6 +89,7 @@ export const rides: Ride[] = [
     id: "jungle-jetty",
     title: "Jungle Jetty Ferry",
     bike: "Super Meteor 650",
+    googleMapUrl: "https://maps.app.goo.gl/KrgswdDVJZgBBVYq7",
     coordinates: [18.27937495240356, 72.99264547513071], // Jungle Jetty
     stats: { distance: "163 km", duration: "4h 24m", type: "Sunny" },
     links: {
@@ -99,7 +104,8 @@ export const rides: Ride[] = [
     id: "lavasa-city",
     title: "Lavasa City",
     bike: "Super Meteor 650",
-    coordinates: [18.421881236418997, 73.50634651762562], // Lavasa City
+    googleMapUrl: "https://maps.app.goo.gl/i1sRowzuuCLPkdm49",
+    coordinates: [18.399773794693196, 73.50910221607371], // Lavasa City
     stats: { distance: "65 km", duration: "2h 22m", type: "Cloudy" },
     links: {
       instagram:
