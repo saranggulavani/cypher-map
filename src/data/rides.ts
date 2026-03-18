@@ -12,6 +12,10 @@ export interface Ride {
     youtube?: string;
     instagram?: string;
   };
+  contentType: {
+    youtube?: "Shorts" | "Video";
+    instagram?: "Reel" | "Post" | "Highlight";
+  };
 }
 
 export const rides: Ride[] = [
@@ -26,6 +30,10 @@ export const rides: Ride[] = [
         "https://www.instagram.com/reel/DH5LTWVNZXy/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
       youtube: "https://youtube.com/shorts/oBx2_qA41v0?si=HVxuqX7Sdqa9RWzD",
     },
+    contentType: {
+      instagram: "Reel",
+      youtube: "Shorts",
+    },
   },
   {
     id: "velas-coastal-ride",
@@ -37,6 +45,10 @@ export const rides: Ride[] = [
       instagram:
         "https://www.instagram.com/reel/DS5HyNFDbws/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
       youtube: "https://youtube.com/shorts/S_KDCXlE85w?si=yViu7iJwd-eb_vzU",
+    },
+    contentType: {
+      instagram: "Reel",
+      youtube: "Shorts",
     },
   },
   {
@@ -50,6 +62,10 @@ export const rides: Ride[] = [
         "https://www.instagram.com/reel/DUsAmqlDX5L/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
       youtube: "https://youtube.com/shorts/jaAL_bmc5tc?si=tDz1Vs0BErmOAViC",
     },
+    contentType: {
+      instagram: "Reel",
+      youtube: "Shorts",
+    },
   },
   {
     id: "tamhini-ride",
@@ -60,6 +76,9 @@ export const rides: Ride[] = [
     links: {
       instagram:
         "https://www.instagram.com/reel/DTQQsjRDSHC/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
+    },
+    contentType: {
+      instagram: "Reel",
     },
   },
   {
@@ -72,6 +91,9 @@ export const rides: Ride[] = [
       instagram:
         "https://www.instagram.com/reel/DTF4p1bjQcp/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
     },
+    contentType: {
+      instagram: "Reel",
+    },
   },
   {
     id: "lavasa-city",
@@ -82,6 +104,9 @@ export const rides: Ride[] = [
     links: {
       instagram:
         "https://www.instagram.com/stories/highlights/17938493954962163/",
+    },
+    contentType: {
+      instagram: "Highlight",
     },
   },
 ];

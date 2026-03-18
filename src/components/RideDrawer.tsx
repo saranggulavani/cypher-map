@@ -75,7 +75,8 @@ export default function RideDrawer({
                 target="_blank"
                 className="flex items-center justify-center gap-2 rounded-xl bg-primary py-4 text-sm font-bold text-background transition-transform active:scale-95"
               >
-                <Instagram size={18} strokeWidth={3} /> Watch Reel
+                <Instagram size={18} strokeWidth={3} /> Watch{" "}
+                {displayRide.contentType.instagram ?? "Reel"}
               </a>
             )}
             {displayRide.links.youtube && (
@@ -84,7 +85,8 @@ export default function RideDrawer({
                 target="_blank"
                 className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-4 text-sm font-bold text-white transition-transform active:scale-95"
               >
-                <Youtube size={18} strokeWidth={3} /> Full POV
+                <Youtube size={18} strokeWidth={3} /> Full{" "}
+                {displayRide.contentType.youtube ?? "POV"}
               </a>
             )}
           </div>
