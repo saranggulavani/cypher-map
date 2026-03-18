@@ -73,4 +73,15 @@ export const rides: Ride[] = [
         "https://www.instagram.com/reel/DTF4p1bjQcp/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
     },
   },
+  {
+    id: "lavasa-city",
+    title: "Lavasa City",
+    bike: "Super Meteor 650",
+    coordinates: [18.421881236418997, 73.50634651762562], // Lavasa City
+    stats: { distance: "65 km", duration: "2h 22m", type: "Cloudy" },
+    links: {
+      instagram:
+        "https://www.instagram.com/stories/highlights/17938493954962163/",
+    },
+  },
 ];
