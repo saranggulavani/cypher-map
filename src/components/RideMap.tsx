@@ -192,14 +192,24 @@ export default function RideMap({
   useEffect(() => {
     if (!activeRide || !mapRef.current) return;
 
-    mapRef.current.flyTo({
-      center: flipCoords(activeRide.coordinates),
-      zoom: 14.5,
-      pitch: 60,
-      speed: 1.2,
-      curve: 1.42,
-      essential: true,
-    });
+    const performFly = () => {
+      mapRef.current?.flyTo({
+        center: flipCoords(activeRide.coordinates),
+        zoom: 14,
+        pitch: 65,
+        speed: 0.8, // Slightly slower for that "Cinematic Arrival" feel
+        curve: 1.42,
+        essential: true,
+      });
+    };
+
+    // If map is already loaded, fly immediately
+    if (mapRef.current.loaded()) {
+      performFly();
+    } else {
+      // If not loaded (Deep-link case), wait for the 'load' event
+      mapRef.current.once("load", performFly);
+    }
   }, [activeRide, mapRef]);
 
   return (

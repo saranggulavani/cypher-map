@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
 import maplibregl from "maplibre-gl";
 import Header from "./components/Header";
@@ -16,9 +16,52 @@ export default function App() {
   const [bearing, setBearing] = useState(0);
 
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const isInitialSync = useRef(true);
 
-  // Memoize data to prevent RideMap from thinking the source changed
   const memoizedRides = useMemo(() => rides, []);
+
+  // --- 1. DEEP LINKING LOGIC ---
+
+  // Sync URL to State (Initial Load)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const rideId = params.get("ride");
+
+    if (rideId && !activeRide) {
+      const matchedRide = memoizedRides.find((r) => r.id === rideId);
+      if (matchedRide) {
+        // Increase timeout slightly to ensure MapLibre is in the DOM
+        const timer = setTimeout(() => {
+          setActiveRide(matchedRide);
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    }
+
+    isInitialSync.current = false;
+  }, [memoizedRides]);
+
+  // Sync State to URL & Document Title
+  useEffect(() => {
+    // CRITICAL: If we haven't finished checking the URL on mount,
+    // do NOT update the history yet.
+    if (isInitialSync.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (activeRide) {
+      params.set("ride", activeRide.id);
+      document.title = `Cypher Map | ${activeRide.title}`;
+    } else {
+      params.delete("ride");
+      document.title = "Cypher Map";
+    }
+
+    const newURL = `${window.location.pathname}${params.toString() ? "?" + params.toString() : ""}`;
+
+    // Use replaceState to keep history clean
+    window.history.replaceState(null, "", newURL);
+  }, [activeRide]);
 
   const toggleList = useCallback(() => {
     setIsListOpen((prev) => !prev);

@@ -101,7 +101,7 @@ export const rides: Ride[] = [
     },
   },
   {
-    id: "lavasa-city",
+    id: "lavasa-ride",
     title: "Lavasa City",
     bike: "Super Meteor 650",
     googleMapUrl: "https://maps.app.goo.gl/i1sRowzuuCLPkdm49",
