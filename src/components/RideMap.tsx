@@ -141,33 +141,56 @@ export default function RideMap({
       });
 
       // --- C. MARKERS (Home + Rides) ---
-      // Home Base Marker
+      // 1. HOME BASE MARKER (PUNE HUB)
       const homeEl = document.createElement("div");
-      homeEl.className = "flex h-10 w-10 items-center justify-center";
+      // Footprint is slightly larger than destination pins to anchor the lines
+      homeEl.className = "relative flex h-10 w-10 items-center justify-center";
+
       homeEl.innerHTML = `
-        <div class="relative flex items-center justify-center">
-          <div class="absolute h-8 w-8 rounded-full bg-primary/20 animate-ping"></div>
-          <div class="relative h-4 w-4 rounded-full bg-white border-4 border-primary shadow-2xl"></div>
-        </div>
-      `;
+  <div class="relative flex h-12 w-12 items-center justify-center">
+    <div class="absolute h-10 w-10 rounded-full border border-primary/20 animate-[ping_3s_linear_infinite]"></div>
+    
+    <div class="absolute h-6 w-6 rounded-full border border-primary/40 bg-primary/5"></div>
+    
+    <div class="relative h-3 w-3 rounded-full bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(255,194,14,0.6)]">
+      <div class="h-1 w-1 rounded-full bg-white animate-pulse"></div>
+    </div>
+  </div>
+`;
+
       new maplibregl.Marker({ element: homeEl })
         .setLngLat(HOME_BASE)
         .addTo(mapRef.current!);
-
       // Ride Markers
       rides.forEach((ride) => {
         const el = document.createElement("div");
+        // Reduced container size to match the new 14px pins
         el.className =
-          "relative flex h-8 w-8 items-center justify-center cursor-pointer";
+          "group relative flex h-6 w-4 items-center justify-center cursor-pointer";
+
         el.innerHTML = `
-          <div class="absolute inset-0 rounded-full bg-primary/40 animate-ping-slow"></div>
-          <div class="relative h-3 w-3 rounded-full bg-primary border-2 border-background shadow-lg"></div>
-        `;
+    <div class="absolute bottom-0 h-1 w-1 rounded-full bg-primary/40 blur-[1px] animate-pulse"></div>
+    
+    <div class="relative transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110">
+      <svg width="14" height="18" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path 
+          d="M12 0C5.37 0 0 5.37 0 12C0 21 12 32 12 32C12 32 24 21 24 12C24 5.37 18.63 0 12 0Z" 
+          fill="#ffc20e" 
+        />
+        <circle cx="12" cy="12" r="5" fill="#0D0D0D" />
+      </svg>
+    </div>
+  `;
+
         el.onclick = (e) => {
           e.stopPropagation();
           setActiveRide(ride);
         };
-        new maplibregl.Marker({ element: el })
+
+        new maplibregl.Marker({
+          element: el,
+          anchor: "bottom", // Keeps the sharp tip exactly on the coordinate
+        })
           .setLngLat(flipCoords(ride.coordinates))
           .addTo(mapRef.current!);
       });

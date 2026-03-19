@@ -8,12 +8,14 @@ import LoadingScreen from "./components/LoadingScreen";
 import MapNavigator from "./components/MapNavigator";
 import RideList from "./components/RideList";
 import { rides, type Ride } from "./data/rides";
+import MissionHint from "./components/MissionHint";
 
 export default function App() {
   const [activeRide, setActiveRide] = useState<Ride | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isListOpen, setIsListOpen] = useState(false);
   const [bearing, setBearing] = useState(0);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const mapRef = useRef<maplibregl.Map | null>(null);
   const isInitialSync = useRef(true);
@@ -63,6 +65,13 @@ export default function App() {
     window.history.replaceState(null, "", newURL);
   }, [activeRide]);
 
+  // Logic: Hide hint once a ride is selected or list is opened
+  useEffect(() => {
+    if (activeRide || isListOpen) {
+      setHasInteracted(true);
+    }
+  }, [activeRide, isListOpen]);
+
   const toggleList = useCallback(() => {
     setIsListOpen((prev) => !prev);
   }, []);
@@ -83,6 +92,8 @@ export default function App() {
       </AnimatePresence>
 
       <Header onToggleList={toggleList} isListOpen={isListOpen} />
+
+      <MissionHint active={!isLoading && !hasInteracted} />
 
       <AnimatePresence>
         {isListOpen && (
