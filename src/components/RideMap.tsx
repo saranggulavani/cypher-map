@@ -9,7 +9,7 @@ interface RideMapProps {
   rides: Ride[];
   onReady: () => void;
   setBearing: (bearing: number) => void;
-  mapRef: React.MutableRefObject<maplibregl.Map | null>;
+  mapRef: React.RefObject<maplibregl.Map | null>;
 }
 
 export default function RideMap({
@@ -24,7 +24,7 @@ export default function RideMap({
   const markersAdded = useRef(false);
 
   // Home Base Coordinates (Pune)
-  const HOME_BASE: [number, number] = [73.81491388052238, 18.50748744146906];
+  const HOME_BASE: [number, number] = [73.80736063585866, 18.50744535043496];
 
   // Helper: Google [Lat, Lng] -> MapLibre [Lng, Lat]
   const flipCoords = (coords: [number, number]): [number, number] => [
