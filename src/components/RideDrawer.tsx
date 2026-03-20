@@ -33,7 +33,29 @@ export default function RideDrawer({
 
   const handleShare = async () => {
     if (!displayRide) return;
+
     const shareUrl = `${window.location.origin}${window.location.pathname}?ride=${displayRide.id}`;
+
+    // Data for the native share sheet
+    const shareData = {
+      title: `RoamingCypher | ${displayRide.title}`,
+      text: `Check out this ride: ${displayRide.title} on the ${displayRide.bike}`,
+      url: shareUrl,
+    };
+
+    // 1. Try Native Share API (iOS/Android/Safari)
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      try {
+        await navigator.share(shareData);
+        return; // Success! The OS handles the UI, so no toast needed.
+      } catch (err) {
+        // If user simply cancelled the share sheet, do nothing
+        if ((err as Error).name === "AbortError") return;
+        console.error("Native share failed:", err);
+      }
+    }
+
+    // 2. Fallback: Clipboard Utility
     const success = await copyToClipboard(shareUrl);
     if (success) {
       setShowToast(true);
@@ -71,7 +93,6 @@ export default function RideDrawer({
 
         {displayRide && (
           <div className="flex flex-col relative">
-            {/* Tactical Toast */}
             <AnimatePresence>
               {showToast && (
                 <motion.div
@@ -85,7 +106,6 @@ export default function RideDrawer({
               )}
             </AnimatePresence>
 
-            {/* Header */}
             <div className="flex items-center justify-between gap-4 mb-8">
               <div className="flex-1 min-w-0">
                 <h2 className="text-xl font-black text-white tracking-tight truncate uppercase leading-none">
@@ -121,7 +141,6 @@ export default function RideDrawer({
               </div>
             </div>
 
-            {/* Stats Grid */}
             <div className="grid grid-cols-3 gap-1 border-y border-white/5 py-5 mb-8">
               <div className="flex flex-col items-center gap-2">
                 <Navigation size={14} className="text-white/20" />
@@ -143,7 +162,6 @@ export default function RideDrawer({
               </div>
             </div>
 
-            {/* Social Buttons */}
             <div className="flex flex-col gap-2.5">
               {displayRide.links.instagram && (
                 <a
