@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { MapPin, ChevronRight } from "lucide-react";
-import type { Ride } from "../data/rides";
+import type { Ride } from "../types";
 
 interface RideListProps {
   rides: Ride[];
@@ -30,27 +30,40 @@ export default function RideList({ rides, onSelect, onClose }: RideListProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar space-y-2">
-          {rides.map((ride) => (
-            <button
-              key={ride.id}
-              onClick={() => onSelect(ride)}
-              className="group w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-left border border-transparent hover:border-white/5"
-            >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 text-textMuted group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                <MapPin size={16} />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xs font-bold text-white leading-tight">
-                  {ride.title}
-                </h3>
-                <p className="text-[10px] text-textMuted mt-0.5">{ride.bike}</p>
-              </div>
-              <ChevronRight
-                size={14}
-                className="text-white/10 group-hover:text-primary transition-colors"
-              />
-            </button>
-          ))}
+          {rides.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 opacity-20">
+              <MapPin size={24} className="mb-2" />
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                No Missions Logged
+              </span>
+            </div>
+          ) : (
+            <>
+              {rides.map((ride) => (
+                <button
+                  key={ride.id}
+                  onClick={() => onSelect(ride)}
+                  className="group w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-all text-left border border-transparent hover:border-white/5"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 text-textMuted group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                    <MapPin size={16} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xs font-bold text-white leading-tight">
+                      {ride.title}
+                    </h3>
+                    <p className="text-[10px] text-textMuted mt-0.5">
+                      {ride.bike}
+                    </p>
+                  </div>
+                  <ChevronRight
+                    size={14}
+                    className="text-white/10 group-hover:text-primary transition-colors"
+                  />
+                </button>
+              ))}
+            </>
+          )}
         </div>
       </motion.div>
     </>

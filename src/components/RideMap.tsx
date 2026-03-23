@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { Ride } from "../data/rides";
+import type { Ride } from "../types";
 
 interface RideMapProps {
   activeRide: Ride | null;
@@ -21,18 +21,15 @@ export default function RideMap({
   mapRef,
 }: RideMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const markersAdded = useRef(false);
+  const markersRef = useRef<maplibregl.Marker[]>([]); // Track markers to clear them
 
-  // Home Base Coordinates (Pune)
   const HOME_BASE: [number, number] = [73.80736063585866, 18.50744535043496];
-
-  // Helper: Google [Lat, Lng] -> MapLibre [Lng, Lat]
   const flipCoords = (coords: [number, number]): [number, number] => [
     coords[1],
     coords[0],
   ];
 
-  // --- 1. INITIALIZATION ---
+  // --- 1. INITIALIZATION (Run once) ---
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
@@ -48,31 +45,21 @@ export default function RideMap({
     mapRef.current.once("idle", () => onReady());
 
     mapRef.current.on("load", () => {
-      if (markersAdded.current || !mapRef.current) return;
-      markersAdded.current = true;
-
-      // --- A. HUB AND SPOKE PATHS ---
-      mapRef.current.addSource("ride-paths", {
+      // Setup empty sources first
+      mapRef.current?.addSource("ride-paths", {
         type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: rides.map((ride) => ({
-            type: "Feature",
-            geometry: {
-              type: "LineString",
-              coordinates: [HOME_BASE, flipCoords(ride.coordinates)],
-            },
-            properties: {},
-          })),
-        },
+        data: { type: "FeatureCollection", features: [] },
+      });
+      mapRef.current?.addSource("ride-glow-source", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
       });
 
-      // Path Glow (Neon Effect)
-      mapRef.current.addLayer({
+      // Add layers (styles stay same as before)
+      mapRef.current?.addLayer({
         id: "path-glow",
         type: "line",
         source: "ride-paths",
-        layout: { "line-join": "round", "line-cap": "round" },
         paint: {
           "line-color": "#ffc20e",
           "line-width": 2,
@@ -80,37 +67,17 @@ export default function RideMap({
           "line-blur": 3,
         },
       });
-
-      // Path Core (Sharp line)
-      mapRef.current.addLayer({
+      mapRef.current?.addLayer({
         id: "path-core",
         type: "line",
         source: "ride-paths",
-        layout: { "line-join": "round", "line-cap": "round" },
         paint: {
           "line-color": "#ffc20e",
           "line-width": 1,
           "line-opacity": 0.3,
         },
       });
-
-      // --- B. RIDE GLOW (10KM Aura) ---
-      mapRef.current.addSource("ride-glow-source", {
-        type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: rides.map((ride) => ({
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: flipCoords(ride.coordinates),
-            },
-            properties: {},
-          })),
-        },
-      });
-
-      mapRef.current.addLayer({
+      mapRef.current?.addLayer({
         id: "ride-glow-layer",
         type: "circle",
         source: "ride-glow-source",
@@ -140,99 +107,123 @@ export default function RideMap({
         },
       });
 
-      // --- C. MARKERS (Home + Rides) ---
-      // 1. HOME BASE MARKER (PUNE HUB)
+      // Add Home Marker once
       const homeEl = document.createElement("div");
-      // Footprint is slightly larger than destination pins to anchor the lines
       homeEl.className = "relative flex h-10 w-10 items-center justify-center";
-
-      homeEl.innerHTML = `
-  <div class="relative flex h-12 w-12 items-center justify-center">
-    <div class="absolute h-10 w-10 rounded-full border border-primary/20 animate-[ping_3s_linear_infinite]"></div>
-    
-    <div class="absolute h-6 w-6 rounded-full border border-primary/40 bg-primary/5"></div>
-    
-    <div class="relative h-3 w-3 rounded-full bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(255,194,14,0.6)]">
-      <div class="h-1 w-1 rounded-full bg-white animate-pulse"></div>
-    </div>
-  </div>
-`;
-
+      homeEl.innerHTML = `<div class="relative flex h-12 w-12 items-center justify-center"><div class="absolute h-10 w-10 rounded-full border border-primary/20 animate-[ping_3s_linear_infinite]"></div><div class="absolute h-6 w-6 rounded-full border border-primary/40 bg-primary/5"></div><div class="relative h-3 w-3 rounded-full bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(255,194,14,0.6)]"><div class="h-1 w-1 rounded-full bg-white animate-pulse"></div></div></div>`;
       new maplibregl.Marker({ element: homeEl })
         .setLngLat(HOME_BASE)
         .addTo(mapRef.current!);
-      // Ride Markers
+    });
+
+    mapRef.current.on("rotate", () =>
+      setBearing(mapRef.current?.getBearing() || 0),
+    );
+    mapRef.current.on("click", () => setActiveRide(null));
+
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // --- 2. DATA WATCHER (Atomic Sync) ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const syncMissions = () => {
+      // 1. Verify custom sources exist. If not, wait for the 'load' event!
+      if (!map.getSource("ride-paths")) {
+        console.log(
+          "SYNC_PAUSED: Waiting for core map layers to initialize...",
+        );
+        map.once("load", syncMissions);
+        return;
+      }
+
+      // 2. Clear stale markers
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+
+      if (rides.length === 0) return;
+
+      // 3. Update GeoJSON Sources (Lines and Auras)
+      const pathSource = map.getSource(
+        "ride-paths",
+      ) as maplibregl.GeoJSONSource;
+      const glowSource = map.getSource(
+        "ride-glow-source",
+      ) as maplibregl.GeoJSONSource;
+
+      if (pathSource) {
+        pathSource.setData({
+          type: "FeatureCollection",
+          features: rides.map((r) => ({
+            type: "Feature",
+            geometry: {
+              type: "LineString",
+              coordinates: [HOME_BASE, flipCoords(r.coordinates)],
+            },
+            properties: {},
+          })),
+        });
+      }
+
+      if (glowSource) {
+        glowSource.setData({
+          type: "FeatureCollection",
+          features: rides.map((r) => ({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: flipCoords(r.coordinates) },
+            properties: {},
+          })),
+        });
+      }
+
+      // 4. Force Marker Deployment
       rides.forEach((ride) => {
         const el = document.createElement("div");
-        // Reduced container size to match the new 14px pins
         el.className =
           "group relative flex h-6 w-4 items-center justify-center cursor-pointer";
-
         el.innerHTML = `
-    <div class="absolute bottom-0 h-1 w-1 rounded-full bg-primary/40 blur-[1px] animate-pulse"></div>
-    
-    <div class="relative transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110">
-      <svg width="14" height="18" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path 
-          d="M12 0C5.37 0 0 5.37 0 12C0 21 12 32 12 32C12 32 24 21 24 12C24 5.37 18.63 0 12 0Z" 
-          fill="#ffc20e" 
-        />
-        <circle cx="12" cy="12" r="5" fill="#0D0D0D" />
-      </svg>
-    </div>
-  `;
+        <div class="absolute bottom-0 h-1 w-1 rounded-full bg-primary/40 blur-[1px] animate-pulse"></div>
+        <div class="relative transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110">
+          <svg width="14" height="18" viewBox="0 0 24 32" fill="none">
+            <path d="M12 0C5.37 0 0 5.37 0 12C0 21 12 32 12 32C12 32 24 21 24 12C24 5.37 18.63 0 12 0Z" fill="#ffc20e" />
+            <circle cx="12" cy="12" r="5" fill="#0D0D0D" />
+          </svg>
+        </div>
+      `;
 
         el.onclick = (e) => {
           e.stopPropagation();
           setActiveRide(ride);
         };
 
-        new maplibregl.Marker({
-          element: el,
-          anchor: "bottom", // Keeps the sharp tip exactly on the coordinate
-        })
+        const marker = new maplibregl.Marker({ element: el, anchor: "bottom" })
           .setLngLat(flipCoords(ride.coordinates))
-          .addTo(mapRef.current!);
+          .addTo(map);
+
+        markersRef.current.push(marker);
       });
 
-      mapRef.current.on("rotate", () =>
-        setBearing(mapRef.current?.getBearing() || 0),
-      );
-      mapRef.current.on("click", () => setActiveRide(null));
-    });
-
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-        markersAdded.current = false;
-      }
+      console.log(`MISSION_SYNC_COMPLETE: ${rides.length} MARKERS ACTIVE`);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  // --- 2. CAMERA MOVEMENT ---
+    syncMissions();
+  }, [rides, setActiveRide]); // Re-runs every time Supabase returns a fresh 'rides' array// Re-runs every time 'rides' array updates from Supabase
+
+  // --- 3. CAMERA MOVEMENT ---
   useEffect(() => {
     if (!activeRide || !mapRef.current) return;
-
-    const performFly = () => {
-      mapRef.current?.flyTo({
-        center: flipCoords(activeRide.coordinates),
-        zoom: 14,
-        pitch: 65,
-        speed: 0.8, // Slightly slower for that "Cinematic Arrival" feel
-        curve: 1.42,
-        essential: true,
-      });
-    };
-
-    // If map is already loaded, fly immediately
-    if (mapRef.current.loaded()) {
-      performFly();
-    } else {
-      // If not loaded (Deep-link case), wait for the 'load' event
-      mapRef.current.once("load", performFly);
-    }
+    mapRef.current.flyTo({
+      center: flipCoords(activeRide.coordinates),
+      zoom: 14,
+      pitch: 65,
+      speed: 0.8,
+      essential: true,
+    });
   }, [activeRide, mapRef]);
 
   return (

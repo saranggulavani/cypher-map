@@ -1,4 +1,5 @@
 import { Github, Instagram, Youtube, Map as MapIcon } from "lucide-react";
+import { useRef } from "react";
 
 interface HeaderProps {
   onToggleList: () => void;
@@ -6,6 +7,23 @@ interface HeaderProps {
 }
 
 export default function Header({ onToggleList, isListOpen }: HeaderProps) {
+  // 1. Create a reference to hold our timer
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 2. Start the countdown when pressed/clicked
+  const handlePressStart = () => {
+    pressTimer.current = setTimeout(() => {
+      window.location.href = "/roaming-rides";
+    }, 2500); // 2500ms = 2.5 seconds. Change to 5000 if you really want 5s!
+  };
+
+  // 3. Cancel the countdown if they let go or drag their finger away
+  const handlePressCancel = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
   return (
     <header className="fixed top-6 left-0 right-0 z-[70] flex justify-center px-4 pointer-events-none">
       <div className="flex items-center justify-between w-full max-w-md rounded-2xl border border-white/10 bg-surface/80 px-4 py-3 backdrop-blur-md shadow-2xl pointer-events-auto">
@@ -22,7 +40,13 @@ export default function Header({ onToggleList, isListOpen }: HeaderProps) {
           >
             <MapIcon size={18} strokeWidth={3} />
           </div>
-          <span className="font-bold tracking-tight text-white">
+          <span
+            onPointerDown={handlePressStart}
+            onPointerUp={handlePressCancel}
+            onPointerLeave={handlePressCancel}
+            onPointerCancel={handlePressCancel}
+            className="font-bold tracking-tight text-white"
+          >
             roamingcypher
           </span>
         </button>
