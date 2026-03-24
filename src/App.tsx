@@ -39,10 +39,10 @@ export default function App() {
 
   // Sync Hint Interaction
   useEffect(() => {
-    if (activeRide || isListOpen) {
+    if (activeRide) {
       setHasInteracted(true);
     }
-  }, [activeRide, isListOpen]);
+  }, [activeRide]);
 
   // --- 1. DEEP LINKING LOGIC ---
   useEffect(() => {
@@ -119,7 +119,7 @@ export default function App() {
         }}
       />
 
-      <MissionHint active={!isAppLoading && !hasInteracted} />
+      <MissionHint active={!isAppLoading && !hasInteracted && !isListOpen} />
 
       <AnimatePresence>
         {isListOpen && (
