@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence } from "motion/react";
 import maplibregl from "maplibre-gl";
+import { AnimatePresence } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 
+import AdminGate from "./components/AdminGate"; // ADDED
 import Header from "./components/Header";
 import LoadingScreen from "./components/LoadingScreen";
 import MapNavigator from "./components/MapNavigator";
@@ -19,6 +20,7 @@ export default function App() {
   const [activeRide, setActiveRide] = useState<Ride | null>(null);
   const [isMapLoading, setIsMapLoading] = useState(true);
   const [isListOpen, setIsListOpen] = useState(false);
+  const [isGateOpen, setIsGateOpen] = useState(false); // ADDED
   const [bearing, setBearing] = useState(0);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [path, setPath] = useState(window.location.pathname);
@@ -42,26 +44,18 @@ export default function App() {
     }
   }, [activeRide, isListOpen]);
 
-  // --- 1. DEEP LINKING LOGIC (Fixed) ---
+  // --- 1. DEEP LINKING LOGIC ---
   useEffect(() => {
-    // GUARD: Only run if DB is loaded AND we haven't synced yet
     if (dbLoading || rides.length === 0 || !isInitialSync.current) return;
-
     const params = new URLSearchParams(window.location.search);
     const rideId = params.get("ride");
-
     if (rideId) {
       const matchedRide = rides.find((r) => r.id === rideId);
       if (matchedRide) {
-        // Reduced timeout so it feels snappier
         setTimeout(() => setActiveRide(matchedRide), 500);
       }
     }
-
-    // LOCK THE GATE: Never run this initial sync again
     isInitialSync.current = false;
-
-    // CRITICAL: Removed activeRide from dependencies so it doesn't loop
   }, [dbLoading, rides]);
 
   // URL State Sync
@@ -82,8 +76,16 @@ export default function App() {
     );
   }, [activeRide, dbLoading]);
 
-  // Route: Mission Control
+  // --- 2. PROTECTED ROUTE CHECK ---
   if (path === "/roaming-rides") {
+    const hasAccess = sessionStorage.getItem("vault_access") === "granted";
+
+    // If no access, force the path back to home and return nothing
+    if (!hasAccess) {
+      window.location.pathname = "/";
+      return null;
+    }
+
     return <RoamingRides />;
   }
 
@@ -104,9 +106,19 @@ export default function App() {
       <Header
         onToggleList={() => setIsListOpen(!isListOpen)}
         isListOpen={isListOpen}
+        onOpenGate={() => setIsGateOpen(true)} // ADDED: Pass this to your Header
       />
 
-      {/* interaction logic is safe here now */}
+      <AdminGate
+        isOpen={isGateOpen}
+        onClose={() => setIsGateOpen(false)}
+        onOpenVault={() => {
+          setIsGateOpen(false);
+          setPath("/roaming-rides");
+          window.history.pushState(null, "", "/roaming-rides");
+        }}
+      />
+
       <MissionHint active={!isAppLoading && !hasInteracted} />
 
       <AnimatePresence>
